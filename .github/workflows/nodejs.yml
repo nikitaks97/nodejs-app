@@ -16,9 +16,9 @@ jobs:
         with:
           node-version: 18.x
       - name: Install dependencies
-        run: npm install
-      - name: test
-        run: npm test 
+        run: |
+            npm install
+            npm test
       - name: Build Docker image
         run: docker build -t <your-dockerhub-username>/nodejs-app:v1.1
       - name: docker login
