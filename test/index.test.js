@@ -22,12 +22,23 @@ describe('HTTP Server', function() {
       done();
     }
   });
-  it('should return Hello World', function(done) {
-    http.get('http://127.0.0.1:3001', (res) => {
+  it('should return the homepage', function(done) {
+    http.get('http://127.0.0.1:3001/', (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
-        assert.strictEqual(data, 'Hello World\n');
+        assert.ok(data.includes('<title>Welcome to My Node.js Website</title>'));
+        done();
+      });
+    });
+  });
+  it('should return 404 for unknown page', function(done) {
+    http.get('http://127.0.0.1:3001/unknown', (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        assert.strictEqual(res.statusCode, 404);
+        assert.ok(data.includes('Page Not Found'));
         done();
       });
     });
