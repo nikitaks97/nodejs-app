@@ -17,5 +17,36 @@ jobs:
           node-version: 18.x
       - name: Install dependencies
         run: npm install
-      - name: Run server (basic check)
-        run: node index.js & sleep 3 && kill $! || true
+      - name: test
+        run: npm test 
+      - name: Build Docker image
+        run: docker build -t <your-dockerhub-username>/nodejs-app:v1.1
+      - name: docker login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+            context: .
+            push: true
+            tags: ${{ secrets.DOCKERHUB_USERNAME }}/nodejs12:v1.1
+      - name: Deploy to Kubernetes
+        uses: azure/setup-kubectl@v1
+        with:
+          version: 'latest'
+      - name: Set up Kubeconfig
+        run: |
+              mkdir -p ~/.kube
+              echo "${{ secrets.KUBECONFIG }}" >> $HOME/.kube/config
+               
+      - name: Deploy to Kubernetes
+        run: |
+                kubectl apply --insecure-skip-tls-verify -f k8s-deployment.yaml --validate=false
+                kubectl apply --insecure-skip-tls-verify-f k8s-service.yaml --validate=false
+                kubectl get pods
+                kubectl get services      
+      
+        
+       
