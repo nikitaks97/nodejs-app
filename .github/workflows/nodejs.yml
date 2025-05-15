@@ -20,11 +20,10 @@ jobs:
             npm install 
             npm install mocha --save-dev
             chmod +x node_modules/.bin/mocha
-      - name: start http server
-        run: |
-              npm start &&
-              sleep 5 # Give the server time to start
-            
+      - name: test 
+        run: npm run test
+      - name: build
+        run: npm run build
       - name: Build Docker image
         run: docker build -t <your-dockerhub-username>/nodejs-app:v1.1
       - name: docker login
