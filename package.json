@@ -1,0 +1,15 @@
+{
+  "name": "nodejs-app",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "This is a basic Node.js application with a simple HTTP server.",
+  "devDependencies": {
+    "mocha": "^11.2.2"
+  }
+}
