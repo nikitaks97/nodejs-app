@@ -16,6 +16,9 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v2.0.2
         with:
           projectBaseDir: .
+          args: >
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
@@ -59,12 +62,12 @@ jobs:
               mkdir -p ~/.kube
               echo "${{ secrets.KUBECONFIG }}" >> $HOME/.kube/config
                
-      - name: Deploy to Kubernetes
-        run: |
-                kubectl apply --insecure-skip-tls-verify -f k8s-deployment.yaml --validate=false
-                kubectl apply --insecure-skip-tls-verify -f k8s-service.yaml --validate=false
-                kubectl get pods
-                kubectl get services
+     # - name: Deploy to Kubernetes
+     #   run: |
+     #           kubectl apply --insecure-skip-tls-verify -f k8s-deployment.yaml --validate=false
+     #           kubectl apply --insecure-skip-tls-verify -f k8s-service.yaml --validate=false
+     #           kubectl get pods
+     #           kubectl get services
 
 
 
