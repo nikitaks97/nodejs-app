@@ -1,4 +1,4 @@
-name: Node.js CI CD pipeline
+name: Node.js CI CD
 
 on:
   push:
