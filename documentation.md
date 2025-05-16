@@ -153,35 +153,37 @@ nodejs-app/
 
 ---
 
-### SonarQube Scan
+### SonarQube Scan and Quality Gate (CI/CD)
 
-- **Purpose:** Analyzes code quality and security using SonarQube as part of the CI/CD pipeline.
-- **How it works:**
-  - The GitHub Actions workflow runs a SonarQube scan step immediately after checking out the code.
-  - Uses the official `SonarSource/sonarqube-scan-action` to analyze the codebase.
-  - Requires two GitHub secrets:
-    - `SONAR_TOKEN`: Authentication token for SonarQube.
-    - `SONAR_HOST_URL`: URL of your SonarQube server (e.g., `https://sonarcloud.io` or your self-hosted instance).
-- **How to use:**
-  1. Set up a SonarQube project and generate a token.
-  2. Add `SONAR_TOKEN` and `SONAR_HOST_URL` as secrets in your GitHub repository.
-  3. On every push or pull request, the workflow will automatically run the scan and report results in SonarQube.
-- **Example workflow step:**
-    ```yaml
-    - name: SonarQube Scan
-      uses: SonarSource/sonarqube-scan-action@v2.0.2
-      with:
-        projectBaseDir: .
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-    ```
+- **SonarQube Scan:**
+  - This step runs a static code analysis using SonarCloud (SonarQube cloud) as part of the CI/CD pipeline.
+  - It is configured to use your SonarCloud project and organization by passing `sonar.projectKey` and `sonar.organization` as arguments.
+  - These values are securely provided as GitHub secrets: `SONAR_PROJECT_KEY` and `SONAR_ORGANIZATION`.
+  - The scan uploads code quality, security, and maintainability results to your SonarCloud dashboard.
+
+- **SonarQube Quality Gate:**
+  - This step enforces code quality by waiting for the SonarCloud analysis to complete and checking the project's Quality Gate status.
+  - If the project does not meet the required quality standards (e.g., too many bugs, vulnerabilities, or code smells), the workflow fails and stops further deployment.
+  - This ensures only code that passes your organization's quality standards is deployed.
+
+- **Why these steps are important:**
+  - They automate code quality checks and enforce standards as part of your CI/CD process.
+  - They help catch issues early, before code is deployed to production.
+
+- **How to configure:**
+  - Make sure you have set the following GitHub repository secrets:
+    - `SONAR_TOKEN`: Your SonarCloud token.
+    - `SONAR_HOST_URL`: Should be `https://sonarcloud.io` for SonarCloud.
+    - `SONAR_PROJECT_KEY`: Your SonarCloud project key.
+    - `SONAR_ORGANIZATION`: Your SonarCloud organization key.
+  - Disable "Automatic Analysis" in SonarCloud project settings to avoid conflicts with CI analysis.
+
 - **Where to view results:**
-  - Log in to your SonarQube dashboard and view the project for code quality, bugs, vulnerabilities, and code smells.
+  - The workflow will fail if the quality gate is not passed. Details are available in the GitHub Actions logs and on your SonarCloud dashboard.
+
 - **Troubleshooting:**
-  - Ensure secrets are set correctly in GitHub.
-  - Check workflow logs for authentication or connectivity errors.
-  - Make sure your SonarQube server is accessible from GitHub Actions runners.
+  - If you see errors about missing properties, make sure all required secrets are set and referenced correctly.
+  - If you see errors about "Automatic Analysis", disable it in SonarCloud as described above.
 
 ---
 
