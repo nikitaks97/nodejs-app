@@ -153,6 +153,108 @@ nodejs-app/
 
 ---
 
+### SonarQube Scan
+
+- **Purpose:** Analyzes code quality and security using SonarQube as part of the CI/CD pipeline.
+- **How it works:**
+  - The GitHub Actions workflow runs a SonarQube scan step immediately after checking out the code.
+  - Uses the official `SonarSource/sonarqube-scan-action` to analyze the codebase.
+  - Requires two GitHub secrets:
+    - `SONAR_TOKEN`: Authentication token for SonarQube.
+    - `SONAR_HOST_URL`: URL of your SonarQube server (e.g., `https://sonarcloud.io` or your self-hosted instance).
+- **How to use:**
+  1. Set up a SonarQube project and generate a token.
+  2. Add `SONAR_TOKEN` and `SONAR_HOST_URL` as secrets in your GitHub repository.
+  3. On every push or pull request, the workflow will automatically run the scan and report results in SonarQube.
+- **Example workflow step:**
+    ```yaml
+    - name: SonarQube Scan
+      uses: SonarSource/sonarqube-scan-action@v2.0.2
+      with:
+        projectBaseDir: .
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+    ```
+- **Where to view results:**
+  - Log in to your SonarQube dashboard and view the project for code quality, bugs, vulnerabilities, and code smells.
+- **Troubleshooting:**
+  - Ensure secrets are set correctly in GitHub.
+  - Check workflow logs for authentication or connectivity errors.
+  - Make sure your SonarQube server is accessible from GitHub Actions runners.
+
+---
+
+### Setting Up SonarQube Cloud (SonarCloud) for Your Project
+
+Follow these steps to set up SonarCloud (the official SonarQube cloud service) and integrate it with your GitHub Actions workflow:
+
+1. **Create a SonarCloud Account**
+   - Go to [https://sonarcloud.io](https://sonarcloud.io) and sign up using your GitHub account.
+
+2. **Create a New Project**
+   - After logging in, click on **+** (plus) in the top right and select **Analyze new project**.
+   - Choose your GitHub organization or personal account and select the repository you want to analyze.
+   - Click **Set Up**.
+
+3. **Generate a SonarCloud Token**
+   - In SonarCloud, click your avatar (top right) > **My Account** > **Security**.
+   - Under **Tokens**, enter a name (e.g., `github-actions`) and click **Generate**.
+   - Copy the generated token. You will not be able to see it again!
+
+4. **Add SonarCloud Secrets to GitHub**
+   - Go to your GitHub repository > **Settings** > **Secrets and variables** > **Actions** > **New repository secret**.
+   - Add the following secrets:
+     - `SONAR_TOKEN`: Paste the token you generated in SonarCloud.
+     - `SONAR_HOST_URL`: Set this to `https://sonarcloud.io`.
+
+5. **Configure Your Workflow**
+   - The provided GitHub Actions workflow already includes a SonarQube scan step using these secrets.
+   - The scan will run automatically on every push or pull request.
+
+6. **First Analysis**
+   - Push a commit or trigger the workflow manually in GitHub Actions.
+   - The SonarCloud scan will run and upload results to your SonarCloud dashboard.
+
+7. **View Results**
+   - Go to your project dashboard on [https://sonarcloud.io](https://sonarcloud.io) to see code quality, bugs, vulnerabilities, and code smells.
+
+#### Troubleshooting
+- If the scan fails, check the GitHub Actions logs for error messages.
+- Make sure the secrets are named exactly as required (`SONAR_TOKEN`, `SONAR_HOST_URL`).
+- Ensure your repository is public or your SonarCloud plan supports private repos.
+- For more help, see the [SonarCloud documentation](https://docs.sonarcloud.io/).
+
+---
+
+### SonarQube Quality Gate
+
+- **Purpose:** Enforces code quality standards by requiring the project to pass SonarQube's quality gate before continuing the CI/CD pipeline.
+- **How it works:**
+  - After the SonarQube scan step, the workflow runs the `sonarqube-quality-gate-action`.
+  - This step waits for the analysis to complete and checks the quality gate status.
+  - If the quality gate fails (e.g., due to too many bugs, vulnerabilities, or code smells), the workflow will fail and stop further deployment.
+- **How to use:**
+  - No extra configuration is needed if you followed the SonarCloud setup steps and have the scan step in your workflow.
+  - You can customize your quality gate in the SonarCloud dashboard under your project settings.
+- **Example workflow step:**
+    ```yaml
+    - name: SonarQube Quality Gate
+      uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
+      with:
+        scanMetadataReportFile: .scannerwork/report-task.txt
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+    ```
+- **Where to view results:**
+  - The workflow will fail if the quality gate is not passed. Details are available in the GitHub Actions logs and on your SonarCloud dashboard.
+- **Troubleshooting:**
+  - If the step fails, review the quality gate conditions in SonarCloud and address any issues reported in the analysis.
+  - Ensure the scan step runs before the quality gate step and that the `scanMetadataReportFile` path is correct.
+
+---
+
 ## 9. Command Reference & Explanations
 
 ### Local Development

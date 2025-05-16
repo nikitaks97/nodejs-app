@@ -11,6 +11,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: SonarQube Scan
+        id: sonarqube
+        uses: SonarSource/sonarqube-scan-action@v2.0.2
+        with:
+          projectBaseDir: .
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      - name: SonarQube Quality Gate
+        uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
+        with:
+          scanMetadataReportFile: .scannerwork/report-task.txt
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       - name: Use Node.js 18.x
         uses: actions/setup-node@v4
         with:
@@ -49,7 +64,7 @@ jobs:
                 kubectl apply --insecure-skip-tls-verify -f k8s-deployment.yaml --validate=false
                 kubectl apply --insecure-skip-tls-verify -f k8s-service.yaml --validate=false
                 kubectl get pods
-                kubectl get services      
-      
-        
-       
+                kubectl get services
+
+
+
