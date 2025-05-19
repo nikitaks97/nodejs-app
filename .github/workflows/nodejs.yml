@@ -39,7 +39,7 @@ jobs:
             npm install mocha --save-dev
             chmod +x node_modules/.bin/mocha
       - name: test 
-        run: npm run test
+        run: npm run test:coverage
       - name: build
         run: npm run build
       - name: docker login
