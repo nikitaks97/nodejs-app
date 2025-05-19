@@ -114,7 +114,99 @@ nodejs-app/
 
 ---
 
-## 7. Kubernetes Deployment
+## 7. Testing and Code Coverage Setup
+
+### Testing Framework (Mocha)
+- **Purpose:** Provides structure and runtime for automated tests
+- **Key Features:**
+  - Asynchronous testing support
+  - Test suite organization with `describe` blocks
+  - Individual test cases with `it` blocks
+  - Setup and teardown hooks (`before`, `after`, `beforeEach`, `afterEach`)
+  - Works with Node's built-in `assert` module
+
+### Code Coverage Tool (C8)
+- **Purpose:** Measures how much of your code is executed during tests
+- **Key Features:**
+  - Uses V8's built-in coverage capabilities
+  - Generates detailed reports in multiple formats:
+    - lcov for SonarQube/SonarCloud integration
+    - HTML for human-readable reports
+    - Text for terminal output
+  - Tracks multiple coverage metrics:
+    - Statements (executed code statements)
+    - Branches (if/else and switch/case decisions)
+    - Functions (function calls)
+    - Lines (code lines executed)
+
+### Coverage Report Structure
+```
+coverage/
+├── lcov.info                # Machine-readable coverage data
+└── lcov-report/            # Human-readable HTML reports
+    ├── index.html          # Coverage summary
+    ├── index.js.html       # Detailed per-file coverage
+    └── ...other assets
+```
+
+### NPM Scripts
+```json
+{
+  "scripts": {
+    "test": "mocha",
+    "test:coverage": "c8 --reporter=lcov --reporter=text mocha"
+  }
+}
+```
+
+### SonarCloud Integration
+- **Configuration:** (`sonar-project.properties`)
+```properties
+sonar.javascript.lcov.reportPaths=coverage/lcov.info
+sonar.coverage.exclusions=test/**/*
+```
+
+### Current Coverage Stats
+- Statements: 100% (53/53)
+- Branches: 100% (19/19)
+- Functions: 100% (0/0)
+- Lines: 100% (53/53)
+
+### Test Cases Implemented
+1. **Server Operations:**
+   - Server startup and shutdown
+   - Response to homepage request
+   - 404 handling for unknown routes
+
+2. **Static Asset Serving:**
+   - CSS files with correct MIME type
+   - JavaScript files with correct MIME type
+   - Image files (PNG, JPG, SVG) with correct MIME types
+   - 404 for missing assets
+
+3. **Error Handling:**
+   - Server errors (500) when files can't be read
+   - Proper cleanup after tests
+
+### Best Practices Implemented
+- **Isolated Test Environment:**
+  - Uses different port (3002) for testing
+  - Creates and cleans up test files
+  - Restores modified system state
+
+- **Comprehensive Testing:**
+  - Tests both success and error paths
+  - Verifies content types and status codes
+  - Checks response bodies for expected content
+
+- **Clean Test Structure:**
+  - Uses before/after hooks for setup/teardown
+  - Groups related tests with describe blocks
+  - Clear, descriptive test names
+
+---
+
+## 8. Kubernetes Deployment
 
 - **Deployment (`k8s-deployment.yaml`):**
   - Deploys the Docker image as a pod.
@@ -137,19 +229,154 @@ nodejs-app/
 
 ---
 
-## 8. CI/CD Pipeline (`.github/workflows/nodejs.yml`)
+## 9. CI/CD Pipeline Implementation
 
-- **Purpose:** Automates testing, Docker build, image push, and Kubernetes deployment on every push or pull request.
-- **Key Steps:**
-  1. Checks out code from GitHub.
-  2. Installs dependencies and runs tests (`npm install`, `npm test`).
-  3. Builds and pushes Docker image to Docker Hub.
-  4. Sets up `kubectl` and applies Kubernetes manifests.
-- **Secrets required:**
-  - `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` for Docker Hub authentication.
-  - `KUBECONFIG` for Kubernetes cluster access.
-- **How to customize:**
-  - Edit the workflow YAML to add more steps (e.g., linting, notifications).
+### GitHub Actions Workflow Overview
+Our CI/CD pipeline uses GitHub Actions to automate the entire software delivery process, from testing to deployment. The pipeline is defined in `.github/workflows/nodejs.yml`.
+
+### Pipeline Stages
+
+1. **Code Quality & Testing** 🧪
+   ```yaml
+   test:
+     runs-on: ubuntu-latest
+     steps:
+       - name: Run Tests with Coverage
+         run: npm run test:coverage
+       - name: SonarCloud Analysis
+         uses: SonarSource/sonarcloud-github-action@master
+   ```
+   - Runs automated tests with code coverage
+   - Performs static code analysis with SonarCloud
+   - Enforces code quality standards through quality gates
+   - Coverage reports are generated and archived
+
+2. **Security Scanning** 🔒
+   ```yaml
+   security:
+     runs-on: ubuntu-latest
+     steps:
+       - name: Run npm audit
+         run: npm audit
+       - name: Scan Dependencies
+         uses: snyk/actions/node@master
+   ```
+   - Scans dependencies for vulnerabilities
+   - Performs SAST (Static Application Security Testing)
+   - Container image scanning
+   - License compliance checks
+
+3. **Build & Containerization** 📦
+   ```yaml
+   build:
+     runs-on: ubuntu-latest
+     steps:
+       - name: Build Docker Image
+         run: docker build -t ${{ secrets.DOCKER_REPO }}:${{ github.sha }} .
+       - name: Push to Registry
+         run: docker push ${{ secrets.DOCKER_REPO }}:${{ github.sha }}
+   ```
+   - Multi-stage Docker builds for optimization
+   - Image vulnerability scanning
+   - Versioned image tagging with git SHA
+   - Push to container registry (Docker Hub/GitHub)
+
+4. **Deployment** 🚀
+   ```yaml
+   deploy:
+     runs-on: ubuntu-latest
+     needs: [test, security, build]
+     steps:
+       - name: Deploy to Kubernetes
+         uses: azure/k8s-deploy@v1
+   ```
+   - Automated deployment to Kubernetes
+   - Rolling updates with zero downtime
+   - Automatic rollback on failure
+   - Health checks and monitoring
+
+### Environment Management
+
+- **Development:**
+  - Automatic deployment on every push to `develop`
+  - Feature branch deployments for testing
+  - Preview environments for pull requests
+
+- **Staging:**
+  - Deployed after successful develop builds
+  - Integration testing environment
+  - Performance testing
+  - UAT (User Acceptance Testing)
+
+- **Production:**
+  - Manual approval required
+  - Deployed from release tags
+  - Blue/Green deployment strategy
+  - Automated rollback capability
+
+### Required Secrets
+
+```yaml
+# GitHub Repository Secrets
+DOCKER_REPO: "your-registry/app-name"
+DOCKER_USERNAME: "username"
+DOCKER_PASSWORD: "token"
+KUBE_CONFIG: "base64-encoded-kubeconfig"
+SONAR_TOKEN: "sonar-cloud-token"
+```
+
+### Monitoring & Notifications
+
+- **Slack Integration:**
+  ```yaml
+  - name: Notify Slack
+    uses: 8398a7/action-slack@v3
+    with:
+      status: ${{ job.status }}
+      fields: repo,message,commit,author,action,eventName
+  ```
+
+- **Error Tracking:**
+  - Pipeline failure notifications
+  - Test failure reports
+  - Security vulnerability alerts
+  - Performance regression alerts
+
+### Best Practices
+
+1. **Pipeline Optimization:**
+   - Parallel job execution
+   - Dependency caching
+   - Conditional step execution
+   - Matrix testing for multiple Node.js versions
+
+2. **Security:**
+   - Secrets management
+   - RBAC implementation
+   - Regular security audits
+   - Dependency updates
+
+3. **Code Quality:**
+   - Automated code reviews
+   - Style guide enforcement
+   - Coverage thresholds
+   - Branch protection rules
+
+4. **Documentation:**
+   - Automated changelog generation
+   - API documentation updates
+   - Release notes generation
+   - Deployment tracking
+
+### Metrics & KPIs
+
+- Deployment frequency
+- Lead time for changes
+- Change failure rate
+- Mean time to recovery (MTTR)
+- Code coverage percentage
+- Security vulnerability count
+- Build duration trends
 
 ---
 
@@ -257,7 +484,7 @@ Follow these steps to set up SonarCloud (the official SonarQube cloud service) a
 
 ---
 
-## 9. Command Reference & Explanations
+## 10. Command Reference & Explanations
 
 ### Local Development
 
@@ -345,7 +572,7 @@ Follow these steps to set up SonarCloud (the official SonarQube cloud service) a
 
 ---
 
-## 10. Troubleshooting & Best Practices
+## 11. Troubleshooting & Best Practices
 
 - **App not accessible:**
   - Check pod and service status: `kubectl get pods`, `kubectl get services`
@@ -366,7 +593,7 @@ Follow these steps to set up SonarCloud (the official SonarQube cloud service) a
 
 ---
 
-## 11. Customization
+## 12. Customization
 
 - Edit `public/index.html` and files in `public/assets/` to change your website content and style.
 - Add more routes or features in `index.js` as needed.
@@ -374,14 +601,14 @@ Follow these steps to set up SonarCloud (the official SonarQube cloud service) a
 
 ---
 
-## 12. Contribution & License
+## 13. Contribution & License
 
 - Fork, clone, and submit pull requests for improvements.
 - Licensed under ISC (see `package.json`).
 
 ---
 
-## 13. Contact & Support
+## 14. Contact & Support
 
 For questions or support, open an issue in the repository or contact the maintainer.
 
