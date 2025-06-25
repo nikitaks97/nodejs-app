@@ -5,5 +5,5 @@ COPY package.json .
 COPY public ./public
 COPY index.js .
 RUN npm install --production
-EXPOSE 3000
+EXPOSE 3002
 CMD ["node", "index.js"]
